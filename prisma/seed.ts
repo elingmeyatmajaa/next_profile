@@ -7,29 +7,32 @@ async function main() {
   // 1. Create actions
   const actions = ["create", "read", "update", "delete"];
   const actionRecords = await Promise.all(
-    actions.map((name) =>
+    actions.map((slug) =>
       prisma.action.upsert({
-        where: { slug: name },
+        where: { slug },
         update: {},
-        create: { name: name.charAt(0).toUpperCase() + name.slice(1), slug: name },
+        create: { name: slug.charAt(0).toUpperCase() + slug.slice(1), slug },
       })
     )
   );
 
-  // 2. Create module dashboard
-  const dashboardModule = await prisma.module.upsert({
+  // 2. Create module
+  const moduleDashboard = await prisma.module.upsert({
     where: { slug: "dashboard" },
     update: {},
     create: { name: "Dashboard", slug: "dashboard" },
   });
 
-  // 3. Assign all actions to dashboard module
-  await Promise.all(
+  // 3. Create permissions (module + action)
+  const permissionRecords = await Promise.all(
     actionRecords.map((action) =>
-      prisma.moduleAction.upsert({
-        where: { module_id_action_id: { module_id: dashboardModule.id, action_id: action.id } },
+      prisma.permission.upsert({
+        where: { module_id_action_id: { module_id: moduleDashboard.id, action_id: action.id } },
         update: {},
-        create: { module_id: dashboardModule.id, action_id: action.id },
+        create: {
+          module_id: moduleDashboard.id,
+          action_id: action.id,
+        },
       })
     )
   );
@@ -41,11 +44,11 @@ async function main() {
     create: { name: "Developer", slug: "developer" },
   });
 
-  // 5. Assign all permissions/modules to developer role
+  // 5. Assign all permissions to developer role
   await prisma.rolePermission.createMany({
-    data: actionRecords.map((action) => ({
+    data: permissionRecords.map((p) => ({
       role_id: developerRole.id,
-      permission_id: action.id, // jika ada tabel permission
+      permission_id: p.id,
     })),
     skipDuplicates: true,
   });
@@ -65,7 +68,7 @@ async function main() {
     create: { user_id: devUser.id, role_id: developerRole.id },
   });
 
-  console.log("✅ Seed finished!");
+  console.log("✅ Seeder finished with permissions!");
 }
 
 main()
