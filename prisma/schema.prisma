@@ -45,6 +45,7 @@ model ModuleAction {
 
 model Permission {
   id        Int    @id @default(autoincrement())
+  name      String @unique
   module    Module @relation(fields: [module_id], references: [id])
   module_id Int
   action    Action @relation(fields: [action_id], references: [id])

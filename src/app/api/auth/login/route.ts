@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       status: "success",
       code: 200,
       message: t("LOGIN_SUCCESS", lang),
-      data: { user, token },
+      data: { token, user },
     });
   } catch (err) {
     console.error(err);
