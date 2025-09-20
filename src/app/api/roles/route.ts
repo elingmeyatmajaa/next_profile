@@ -24,19 +24,43 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, slug } = body;
+    const { name, slug, permissions } = body;
 
     if (!name || !slug) {
-      return NextResponse.json({ status: "error", code: 400, message: "Bad request" });
+      return NextResponse.json(
+        { status: "error", code: 400, message: "Bad request" },
+        { status: 400 }
+      );
     }
 
     const newRole = await prisma.role.create({
-      data: { name, slug },
+      data: {
+        name,
+        slug,
+        permissions: permissions?.length
+          ? {
+              create: permissions.map((permissionId: string) => ({
+                permission: { connect: { id: permissionId } },
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        permissions: {
+          include: { permission: true },
+        },
+      },
     });
 
-    return NextResponse.json({ status: "success", code: 201, data: newRole });
+    return NextResponse.json(
+      { status: "success", code: 201, data: newRole },
+      { status: 201 }
+    );
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ status: "error", code: 500, message: "Server error" });
+    return NextResponse.json(
+      { status: "error", code: 500, message: "Server error" },
+      { status: 500 }
+    );
   }
 }
