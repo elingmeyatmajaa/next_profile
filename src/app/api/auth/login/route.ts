@@ -67,6 +67,7 @@ export async function POST(req: Request) {
     // @ts-ignore
     delete user.password;
 
+    
     return apiResponse({
       status: "success",
       code: 200,
