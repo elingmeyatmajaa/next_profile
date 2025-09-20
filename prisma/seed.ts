@@ -11,7 +11,7 @@ async function main() {
 
   const allActions = ["create", "read", "update", "delete"];
 
-  // 1️⃣ Buat action global
+  // 1️⃣ Bikin action global
   const actionRecords: Record<string, any> = {};
   for (const act of allActions) {
     actionRecords[act] = await prisma.action.upsert({
@@ -24,8 +24,8 @@ async function main() {
     });
   }
 
-  // 2️⃣ Buat module + permission
-  const permissionRecords: any[] = [];
+  // 2️⃣ Bikin modules + permissions + ModuleAction
+  const permissionRecords = [];
   for (const mod of modules) {
     const moduleRecord = await prisma.module.upsert({
       where: { slug: mod.slug },
@@ -35,6 +35,8 @@ async function main() {
 
     for (const act of mod.actions) {
       const action = actionRecords[act];
+
+      // a) Permission
       const permission = await prisma.permission.upsert({
         where: { name: `${mod.slug}-${act}` },
         update: {},
@@ -45,17 +47,32 @@ async function main() {
         },
       });
       permissionRecords.push(permission);
+
+      // b) ModuleAction
+      await prisma.moduleAction.upsert({
+        where: {
+          module_id_action_id: {
+            module_id: moduleRecord.id,
+            action_id: action.id,
+          },
+        },
+        update: {},
+        create: {
+          module_id: moduleRecord.id,
+          action_id: action.id,
+        },
+      });
     }
   }
 
-  // 3️⃣ Buat role developer
+  // 3️⃣ Role developer
   const developerRole = await prisma.role.upsert({
     where: { slug: "developer" },
     update: {},
     create: { name: "Developer", slug: "developer" },
   });
 
-  // 4️⃣ Assign semua permission ke role developer
+  // 4️⃣ Assign semua permissions ke developer
   await prisma.rolePermission.createMany({
     data: permissionRecords.map((p) => ({
       role_id: developerRole.id,
@@ -64,7 +81,7 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // 5️⃣ Buat user developer
+  // 5️⃣ User developer
   const hashedPassword = await bcrypt.hash("12345678", 10);
   const devUser = await prisma.user.upsert({
     where: { email: "developer@developer.com" },

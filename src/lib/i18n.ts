@@ -13,7 +13,8 @@ const messages = {
     PASSWORD_REQUIRED: "Password is required",
     SUCCESS: "Success" , // ✅
     NOT_FOUND: "Not Found", // ✅
-    DELETED: "Deleted successfully"
+    DELETED: "Deleted successfully",
+    UPDATED: "Updated successfully"
 
   },
   id: {
