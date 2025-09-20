@@ -14,7 +14,8 @@ const messages = {
     SUCCESS: "Success" , // ✅
     NOT_FOUND: "Not Found", // ✅
     DELETED: "Deleted successfully",
-    UPDATED: "Updated successfully"
+    UPDATED: "Updated successfully",
+    LOGOUT_SUCCESS: "Logout successful" // ✅
 
   },
   id: {
