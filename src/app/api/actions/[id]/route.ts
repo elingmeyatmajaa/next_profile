@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
 import { t } from "@/lib/i18n";
+import { slugify } from "@/lib/slugify";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const lang = req.headers.get("accept-language") || "en";
@@ -82,22 +83,32 @@ export async function DELETE(
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   const lang = req.headers.get("accept-language") || "en";
 
   try {
-    const body = await req.json();
-    const { name, slug } = body;
+    const formData = await req.formData();
+    const name = formData.get("name")?.toString() || null;
+    let slug = formData.get("slug")?.toString() || null;
 
-    if (!name && !slug) {
+    if (!name) {
       return NextResponse.json(
         { status: "error", code: 400, message: t("BAD_REQUEST", lang) },
         { status: 400 }
       );
     }
 
-    const action = await prisma.action.findUnique({ where: { id: params.id } });
-    if (!action) {
+    // Generate slug otomatis dari name jika tidak ada
+    if (!slug) slug = slugify(name);
+
+    const existingAction = await prisma.action.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!existingAction) {
       return NextResponse.json(
         { status: "error", code: 404, message: t("NOT_FOUND", lang) },
         { status: 404 }
@@ -106,10 +117,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const updatedAction = await prisma.action.update({
       where: { id: params.id },
-      data: {
-        name: name ?? action.name,
-        slug: slug ?? action.slug,
-      },
+      data: { name, slug },
     });
 
     return NextResponse.json(
@@ -124,3 +132,5 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     );
   }
 }
+
+
