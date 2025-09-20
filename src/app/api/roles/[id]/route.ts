@@ -20,20 +20,45 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const body = await req.json();
-    const { name, slug } = body;
+    const { name, slug, permissions } = body; // permissions: array of permission IDs
 
+    // Update role data
     const updatedRole = await prisma.role.update({
       where: { id: params.id },
-      data: { name, slug },
+      data: {
+        name,
+        slug,
+        permissions: permissions
+          ? {
+              // Hapus role_permission lama, set yang baru
+              deleteMany: {},
+              create: permissions.map((permissionId: string) => ({
+                permission_id: permissionId,
+              })),
+            }
+          : undefined,
+      },
+      include: { permissions: { include: { permission: true } } },
     });
 
-    return NextResponse.json({ status: "success", code: 200, data: updatedRole });
+    return NextResponse.json({
+      status: "success",
+      code: 200,
+      data: updatedRole,
+    });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ status: "error", code: 500, message: "Server error" });
+    return NextResponse.json({
+      status: "error",
+      code: 500,
+      message: "Server error",
+    });
   }
 }
 
