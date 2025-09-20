@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { slugify } from "@/lib/slugify";
+import { t } from "@/lib/i18n";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -24,21 +26,38 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const body = await req.json();
-    const { name, slug, permissions } = body; // permissions: array of permission IDs
+  const lang = req.headers.get("accept-language") || "en";
 
-    // Update role data
+  try {
+    const formData = await req.formData();
+    const name = formData.get("name")?.toString() || null;
+    let slug = formData.get("slug")?.toString() || null;
+    const permissionsRaw = formData.get("permissions")?.toString() || ""; // "id1,id2,id3"
+
+    if (!name) {
+      return NextResponse.json(
+        { status: "error", code: 400, message: t("BAD_REQUEST", lang) },
+        { status: 400 }
+      );
+    }
+
+    if (!slug) {
+      slug = slugify(name);
+    }
+
+    const permissions = permissionsRaw
+      ? permissionsRaw.split(",").map((p) => p.trim())
+      : [];
+
     const updatedRole = await prisma.role.update({
       where: { id: params.id },
       data: {
         name,
         slug,
-        permissions: permissions
+        permissions: permissions.length
           ? {
-              // Hapus role_permission lama, set yang baru
-              deleteMany: {},
-              create: permissions.map((permissionId: string) => ({
+              deleteMany: {}, // hapus relasi lama
+              create: permissions.map((permissionId) => ({
                 permission_id: permissionId,
               })),
             }
@@ -47,18 +66,16 @@ export async function PUT(
       include: { permissions: { include: { permission: true } } },
     });
 
-    return NextResponse.json({
-      status: "success",
-      code: 200,
-      data: updatedRole,
-    });
+    return NextResponse.json(
+      { status: "success", code: 200, data: updatedRole },
+      { status: 200 }
+    );
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({
-      status: "error",
-      code: 500,
-      message: "Server error",
-    });
+    console.error("PUT role error:", err);
+    return NextResponse.json(
+      { status: "error", code: 500, message: t("SERVER_ERROR", lang) },
+      { status: 500 }
+    );
   }
 }
 
