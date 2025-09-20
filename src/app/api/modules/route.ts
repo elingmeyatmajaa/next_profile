@@ -32,13 +32,12 @@ export async function GET(req: Request) {
     });
   }
 }
-
 export async function POST(req: Request) {
   const lang = req.headers.get("accept-language") || "en";
 
   try {
     const body = await req.json();
-    const { name, slug } = body;
+    const { name, slug, actions } = body; // actions = ["create","read"] misal
 
     if (!name || !slug) {
       return NextResponse.json(
@@ -47,12 +46,36 @@ export async function POST(req: Request) {
       );
     }
 
+    // Buat module
     const newModule = await prisma.module.create({
       data: { name, slug },
     });
 
+    // Jika ada actions, hubungkan ke module via ModuleAction
+    if (actions && actions.length > 0) {
+      const actionRecords = await prisma.action.findMany({
+        where: { slug: { in: actions } },
+      });
+
+      const moduleActionsData = actionRecords.map((act) => ({
+        module_id: newModule.id,
+        action_id: act.id,
+      }));
+
+      await prisma.moduleAction.createMany({
+        data: moduleActionsData,
+        skipDuplicates: true,
+      });
+    }
+
+    // Optional: fetch module beserta ModuleAction untuk return
+    const moduleWithActions = await prisma.module.findUnique({
+      where: { id: newModule.id },
+      include: { ModuleAction: true },
+    });
+
     return NextResponse.json(
-      { status: "success", code: 201, message: t("CREATED", lang), data: newModule },
+      { status: "success", code: 201, message: t("CREATED", lang), data: moduleWithActions },
       { status: 201 }
     );
   } catch (err) {
