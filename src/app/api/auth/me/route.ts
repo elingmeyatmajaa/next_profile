@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: decoded.sub },
+  where: { id: Number(decoded.sub) },
       include: {
         roles: {
           include: {

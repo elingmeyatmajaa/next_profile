@@ -1,10 +1,15 @@
 // app/api/auth/register/route.ts
-import { prisma } from "../../../../lib/prisma";
-import bcrypt from "bcryptjs";
-import { signJwt } from "../../../../lib/jwt";
-import { t } from "../../../../lib/i18n";
-import { apiResponse } from "../../../../lib/apiResponse";
+// import { prisma } from "../../../../lib/prisma";
+// import bcrypt from "bcryptjs";
+// import { signJwt } from "../../../../lib/jwt";
+// import { t } from "../../../../lib/i18n";
+// import { apiResponse } from "../../../../lib/apiResponse";
+import { apiResponse } from "@/lib/apiResponse";
+import { t } from "@/lib/i18n";
+import { signJwt } from "@/lib/jwt";
+import { prisma } from "@/lib/prisma";
 import { validateFormData } from "@/lib/utils/validations";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   const lang = req.headers.get("accept-language") || "en";

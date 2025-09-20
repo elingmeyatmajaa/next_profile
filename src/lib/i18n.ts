@@ -10,7 +10,11 @@ const messages = {
      EMAIL_EXISTS: "Email already registered",   // ✅ tambahkan
     NAME_REQUIRED: "Name is required",          // ✅
     EMAIL_REQUIRED: "Email is required",        // ✅
-    PASSWORD_REQUIRED: "Password is required",  // ✅
+    PASSWORD_REQUIRED: "Password is required",
+    SUCCESS: "Success" , // ✅
+    NOT_FOUND: "Not Found", // ✅
+    DELETED: "Deleted successfully"
+
   },
   id: {
     CREATED: "Berhasil dibuat",
