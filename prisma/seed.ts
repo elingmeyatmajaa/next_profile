@@ -1,27 +1,18 @@
-import { PrismaClient, Action } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // definisi modules + actions
   const modules = [
-    {
-      name: "Dashboard",
-      slug: "dashboard",
-      actions: ["create", "read", "update", "delete"],
-    },
-    {
-      name: "Contact",
-      slug: "contact",
-      actions: ["read"],
-    },
+    { name: "Dashboard", slug: "dashboard", actions: ["create", "read", "update", "delete"] },
+    { name: "Contact", slug: "contact", actions: ["read"] },
   ];
 
   const allActions = ["create", "read", "update", "delete"];
 
-  // bikin action global
-  const actionRecords: Record<string, Action> = {};
+  // 1️⃣ Buat action global
+  const actionRecords: Record<string, any> = {};
   for (const act of allActions) {
     actionRecords[act] = await prisma.action.upsert({
       where: { slug: act },
@@ -33,8 +24,8 @@ async function main() {
     });
   }
 
-  // bikin modules + permissions
-  const permissionRecords = [];
+  // 2️⃣ Buat module + permission
+  const permissionRecords: any[] = [];
   for (const mod of modules) {
     const moduleRecord = await prisma.module.upsert({
       where: { slug: mod.slug },
@@ -48,23 +39,23 @@ async function main() {
         where: { name: `${mod.slug}-${act}` },
         update: {},
         create: {
-          name: `${mod.slug}-${act}`, // contoh: dashboard-create, contact-read
-          module: { connect: { id: moduleRecord.id } },
-          action: { connect: { id: action.id } },
+          name: `${mod.slug}-${act}`,
+          module_id: moduleRecord.id,
+          action_id: action.id,
         },
       });
       permissionRecords.push(permission);
     }
   }
 
-  // role developer
+  // 3️⃣ Buat role developer
   const developerRole = await prisma.role.upsert({
     where: { slug: "developer" },
     update: {},
     create: { name: "Developer", slug: "developer" },
   });
 
-  // assign semua permissions ke developer
+  // 4️⃣ Assign semua permission ke role developer
   await prisma.rolePermission.createMany({
     data: permissionRecords.map((p) => ({
       role_id: developerRole.id,
@@ -73,7 +64,7 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // user developer
+  // 5️⃣ Buat user developer
   const hashedPassword = await bcrypt.hash("12345678", 10);
   const devUser = await prisma.user.upsert({
     where: { email: "developer@developer.com" },
@@ -85,14 +76,14 @@ async function main() {
     },
   });
 
-  // assign role developer ke user
+  // 6️⃣ Assign role developer ke user
   await prisma.userRole.upsert({
     where: { user_id_role_id: { user_id: devUser.id, role_id: developerRole.id } },
     update: {},
     create: { user_id: devUser.id, role_id: developerRole.id },
   });
 
-  console.log("✅ Seeder finished with modules, actions, permissions, roles, and user!");
+  console.log("✅ Seeder selesai!");
 }
 
 main()

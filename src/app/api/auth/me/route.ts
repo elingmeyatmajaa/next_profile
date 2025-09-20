@@ -27,9 +27,8 @@ export async function GET(req: Request) {
         message: t("INVALID_CREDENTIALS", lang),
       });
     }
-
     const user = await prisma.user.findUnique({
-  where: { id: Number(decoded.sub) },
+      where: { id: String(decoded.sub) },
       include: {
         roles: {
           include: {

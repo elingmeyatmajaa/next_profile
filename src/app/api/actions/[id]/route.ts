@@ -26,8 +26,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       );
     }
 
+    // ID sekarang UUID string, tidak perlu Number()
     const action = await prisma.action.findUnique({
-      where: { id: Number(params.id) },
+      where: { id: params.id },
     });
 
     if (!action) {
@@ -57,16 +58,8 @@ export async function DELETE(
   const lang = req.headers.get("accept-language") || "en";
 
   try {
-    const id = Number(params.id);
-
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { status: "error", code: 400, message: t("BAD_REQUEST", lang) },
-        { status: 400 }
-      );
-    }
-
-    const action = await prisma.action.findUnique({ where: { id } });
+    // Langsung gunakan string UUID
+    const action = await prisma.action.findUnique({ where: { id: params.id } });
     if (!action) {
       return NextResponse.json(
         { status: "error", code: 404, message: t("NOT_FOUND", lang) },
@@ -74,7 +67,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.action.delete({ where: { id } });
+    await prisma.action.delete({ where: { id: params.id } });
 
     return NextResponse.json(
       { status: "success", code: 200, message: t("DELETED", lang) },
