@@ -3,7 +3,6 @@ import { signIn } from "next-auth/react";
 
 export function loginAction(email: string, password: string) {
   return async function loginThunk(dispatch: any, getState: any) {
-    const { email, password } = getState().login;
     dispatch({
       type: "login/store",
       payload: {
@@ -11,46 +10,41 @@ export function loginAction(email: string, password: string) {
         isLoading: true,
       },
     });
+
     const res = await signIn("credentials", {
       email,
       password,
       redirect: false,
-      callbackUrl: `/login`,
     });
+
     if (res?.ok) {
+      // ✅ sukses login
       dispatch({
         type: "login/store",
         payload: {
           ...getState().login,
           isLoggedIn: true,
           isLoading: false,
+          errors: {}, // clear error
         },
       });
     } else {
-      const params = new URLSearchParams(res?.error ?? "");
+      // ❌ gagal login
       dispatch({
         type: "login/store",
         payload: {
           ...getState().login,
           isLoading: false,
           errors: {
-            email: params.get("email") ? [params.get("email")] : undefined,
-            password: params.get("password")
-              ? [params.get("password")]
-              : undefined,
+            email: ["Invalid email or password"], // tampilkan error umum
+            password: ["Invalid email or password"],
           },
         },
       });
     }
-    dispatch({
-      type: "login/store",
-      payload: {
-        ...getState().login,
-        isLoading: false,
-      },
-    });
   };
 }
+
 
 export const loginSlice = createSlice({
   name: "login",

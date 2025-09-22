@@ -88,31 +88,6 @@ export default function Page() {
               >
                 Login
               </PrimaryButton>
-
-              {/* Divider */}
-              <div className="flex items-center my-6">
-                <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
-                <span className="mx-2 text-gray-400 dark:text-gray-500 text-sm">
-                  or
-                </span>
-                <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
-              </div>
-
-              {/* Social login */}
-              <button
-                className="flex items-center justify-center gap-3 border rounded-xl w-full py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition dark:border-gray-600"
-                onClick={() =>
-                  signIn("google", {
-                    callbackUrl: "/admin",
-                  })
-                }
-                type="button"
-              >
-                <User className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-                <span className="font-medium text-gray-700 dark:text-gray-200">
-                  Sign in with Google
-                </span>
-              </button>
             </form>
           </CardContent>
         </Card>
