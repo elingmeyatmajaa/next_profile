@@ -149,6 +149,9 @@ export default function Home() {
             <Link href="#faq" className="text-gray-600 hover:text-blue-600">
               FAQ
             </Link>
+            <Link href="/login" className="text-gray-600 hover:text-blue-600">
+              Login
+            </Link>
           </div>
           <Link
             href="#contact"

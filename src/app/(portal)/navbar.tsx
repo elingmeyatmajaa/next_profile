@@ -1,28 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Briefcase, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
+  NavigationMenu
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import CustomImage from "@/components/ui/custom-image";
 // import HttpClient from "@/lib/http_client";
 
 const images = [
@@ -100,6 +86,11 @@ export default function NavBar() {
                 className="text-sm font-medium hover:underline underline-offset-4"
                 href="#contact">
                 Kontak
+              </Link>
+               <Link
+                className="text-sm font-medium hover:underline underline-offset-4"
+                href="/login">
+                Login
               </Link>
             </nav>
           </NavigationMenu>

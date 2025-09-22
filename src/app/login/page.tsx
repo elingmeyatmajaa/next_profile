@@ -1,149 +1,121 @@
 "use client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import TextForm from "@/components/custom/text_form";
-import { setEmail, setPassword, loginAction } from "./redux/login_slice";
-import { useDispatch, useSelector } from "react-redux";
+
 import PasswordForm from "@/components/custom/password_form";
 import PrimaryButton from "@/components/custom/primary_button";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "@/components/custom/image";
 import Text from "@/components/custom/text";
-// import CustomImage from "@/components/ui/custom-image";
-
-import { Button } from "@/components/ui/button";
-import { signIn } from "next-auth/react";
+import TextForm from "@/components/custom/text_form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { loginAction, setEmail, setPassword } from "./redux/login_slice";
 import { User } from "lucide-react";
+import { signIn } from "next-auth/react";
+
 export default function Page() {
   const router = useRouter();
   const login = useSelector((state: any) => state.login as LoginState);
   const dispatch = useDispatch();
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const loginThunk = loginAction(login.email, login.password) as any;
     dispatch(loginThunk);
   }
+
   useEffect(() => {
     if (login.isLoggedIn) {
-      // if(login.user.role === "admin") router.replace("/admin/");
       router.replace("/admin/");
     }
   }, [login.isLoggedIn]);
 
-  // const [setting, setSetting] = useState({} as SettingState);
-
-  // const fetchSetting = async (query: string = "") => {
-  //   const { data } = await HttpClient.GET("setting", {});
-  //   setSetting(data.data);
-  // };
-
-  // useEffect(() => {
-  //   fetchSetting();
-  // }, []);
-
   return (
-    <div className="flex h-screen bg-cover">
-      <div className="absolute -z-10 w-full h-screen">
-        {/* <CustomImage
-          className="w-full h-full object-cover"
-          src={"https://picsum.photos/id/1015/1000/1000"}
-          height={1000}
-          width={1000}
-        /> */}
-      </div>
-      <div className="hidden lg:inline-block flex-1 w-2/3 mt-96">
-        <div className="ml-60 text-white text-lg font-normal">
-          <div className="mb-3 font-medium">
-            <Text>asd</Text>
-          </div>
-          <div className="">
-            <Text>asdfa</Text>
-          </div>
+    <div className="flex h-screen bg-white dark:bg-gray-900">
+      {/* Left side: background image + tagline */}
+      <div className="hidden lg:flex flex-1 relative">
+        <img
+          src="https://picsum.photos/id/1015/1600/1200"
+          alt="Background"
+          className="absolute inset-0 w-full h-full object-cover opacity-70"
+        />
+        <div className="relative z-10 flex flex-col justify-center items-start p-20 text-white">
+          <h1 className="text-4xl font-bold mb-4">Welcome Back!</h1>
+          <p className="text-lg opacity-90">
+            Masuk ke dashboard admin untuk mengelola aplikasi dengan mudah.
+          </p>
         </div>
       </div>
-      <div className="w-full lg:w-4/12 p-8 h-screen flex justify-center">
-        <div className="my-auto w-10/12 ">
-          <form action="" method="POST" onSubmit={onSubmit}>
-            <Card className="rounded-2xl drop-shadow-xl border bg-white">
-              <CardHeader className="">
-                <div className="flex ">
-                  {/* <CustomImage
-                    src={"/logo.png"}
-                    alt=""
-                    width={56}
-                    height={56}
-                  /> */}
-                  <CardTitle className="ml-3 text-xl">
-                    <Text>asdf</Text>
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="mb-5">
-                <div className="mb-5">
-                  <TextForm
-                    className={"rounded-3xl shadow"}
-                    onChange={(e) => dispatch(setEmail(e.target.value))}
-                    value={login.email}
-                    error={login.errors.email}
-                    placeholder="Email"
-                  />
-                </div>
-                <div className="mb-3">
-                  <PasswordForm
-                    className="rounded-3xl shadow"
-                    placeholder="Password"
-                    type="password"
-                    onChange={(e) => dispatch(setPassword(e.target.value))}
-                    value={login.password}
-                    error={login.errors.password}
-                  />
-                </div>
-                <div className="flex justify-center ">
-                  <PrimaryButton
-                    className=" w-full mt-5 rounded-3xl"
-                    isLoading={login.isLoading}>
-                    Login
-                  </PrimaryButton>
-                </div>
-                <div className="mt-5">
-                  <button
-                    className="border flex justify-between rounded-full w-full p-3 mb-3"
-                    onClick={() =>
-                      signIn("google", {
-                        callbackUrl: "/admin",
-                      })
-                    }
-                    type="button">
-                    <User />
-                    <p className="flex-1">Sign in With Google</p>
-                  </button>
-                  {/* <button
-                    className="border flex justify-between rounded-full w-full p-3 mb-3"
-                    onClick={() =>
-                      signIn("google", {
-                        callbackUrl: "/admin",
-                      })
-                    }
-                    type="button">
-                    <IconBrandX />
-                    <p className="flex-1">Sign in With X</p>
-                  </button>
-                  <button
-                    className="border flex justify-between rounded-full w-full p-3"
-                    onClick={() =>
-                      signIn("google", {
-                        callbackUrl: "/admin",
-                      })
-                    }
-                    type="button">
-                    <IconBrandGithub />
-                    <p className="flex-1">Sign in With Github</p>
-                  </button> */}
-                </div>
-              </CardContent>
-            </Card>
-          </form>
-        </div>
+
+      {/* Right side: login form */}
+      <div className="flex w-full lg:w-5/12 justify-center items-center bg-gray-50 dark:bg-gray-800">
+        <Card className="w-10/12 max-w-md rounded-2xl shadow-xl border bg-white dark:bg-gray-900 dark:border-gray-700">
+          <CardHeader className="pb-0">
+            <div className="flex items-center justify-center">
+              <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                <Text>Login to Your Account</Text>
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <form onSubmit={onSubmit}>
+              {/* Email */}
+              <div className="mb-4">
+                <TextForm
+                  className="rounded-xl shadow-sm px-4 py-3 dark:bg-gray-800 dark:text-gray-100"
+                  onChange={(e) => dispatch(setEmail(e.target.value))}
+                  value={login.email}
+                  error={login.errors.email}
+                  placeholder="Email"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="mb-6">
+                <PasswordForm
+                  className="rounded-xl shadow-sm px-4 py-3 dark:bg-gray-800 dark:text-gray-100"
+                  placeholder="Password"
+                  type="password"
+                  onChange={(e) => dispatch(setPassword(e.target.value))}
+                  value={login.password}
+                  error={login.errors.password}
+                />
+              </div>
+
+              {/* Login button */}
+              <PrimaryButton
+                className="w-full rounded-xl py-3 text-lg font-medium bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                isLoading={login.isLoading}
+              >
+                Login
+              </PrimaryButton>
+
+              {/* Divider */}
+              <div className="flex items-center my-6">
+                <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                <span className="mx-2 text-gray-400 dark:text-gray-500 text-sm">
+                  or
+                </span>
+                <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+
+              {/* Social login */}
+              <button
+                className="flex items-center justify-center gap-3 border rounded-xl w-full py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition dark:border-gray-600"
+                onClick={() =>
+                  signIn("google", {
+                    callbackUrl: "/admin",
+                  })
+                }
+                type="button"
+              >
+                <User className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  Sign in with Google
+                </span>
+              </button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
