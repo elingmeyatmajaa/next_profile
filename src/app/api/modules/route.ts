@@ -7,33 +7,66 @@ export async function GET(req: Request) {
   const lang = req.headers.get("accept-language") || "en";
 
   try {
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const search = searchParams.get("search") || "";
+
+    const where = search
+      ? {
+          OR: [
+            { name: { contains: search } },
+            { slug: { contains: search } },
+          ],
+        }
+      : {};
+
+    const total = await prisma.module.count({ where });
+
     const modules = await prisma.module.findMany({
+      where,
       include: {
         ModuleAction: {
-          include: {
-            action: true,
-          },
+          include: { action: true },
         },
         permissions: true,
       },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({
-      status: "success",
-      code: 200,
-      message: t("SUCCESS", lang),
-      data: modules,
-    });
+    return NextResponse.json(
+      {
+        status: "success",
+        code: 200,
+        message: t("SUCCESS", lang),
+        data: modules,
+        pagination: {
+          total, 
+          page, 
+          limit, 
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+          nextPage: page < Math.ceil(total / limit) ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null,
+        },
+      },
+      { status: 200 }
+    );
   } catch (err) {
     console.error(err);
-    return NextResponse.json({
-      status: "error",
-      code: 500,
-      message: t("SERVER_ERROR", lang),
-    });
+    return NextResponse.json(
+      {
+        status: "error",
+        code: 500,
+        message: t("SERVER_ERROR", lang),
+      },
+      { status: 500 }
+    );
   }
 }
-
 
 export async function POST(req: Request) {
   const lang = req.headers.get("accept-language") || "en";
