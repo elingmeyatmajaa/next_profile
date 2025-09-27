@@ -1,11 +1,18 @@
 // app/api/actions/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { t } from "../../../lib/i18n";
+import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
+import { t } from "@/lib/i18n";
 import { slugify } from "@/lib/slugify";
 
 export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const skip = (page - 1) * limit;
+  const search = searchParams.get("search");
+
   const lang = req.headers.get("accept-language") || "en";
   const authHeader = req.headers.get("authorization");
 
@@ -27,10 +34,40 @@ export async function GET(req: Request) {
       );
     }
 
-    const actions = await prisma.action.findMany();
+    // filter by name
+    const where = search
+      ? {
+          name: {
+            contains: search,
+          },
+        }
+      : {};
+
+    const [total, actions] = await Promise.all([
+      prisma.action.count({ where }),
+      prisma.action.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" }, 
+      }),
+    ]);
 
     return NextResponse.json(
-      { status: "success", code: 200, message: "OK", data: actions },
+      {
+        status: "success",
+        code: 200,
+        message: "OK",
+        data: actions,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          nextPage: page < Math.ceil(total / limit) ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null,
+        },
+      },
       { status: 200 }
     );
   } catch (err) {
@@ -41,6 +78,8 @@ export async function GET(req: Request) {
     );
   }
 }
+
+
 
 export async function POST(req: Request) {
   const lang = req.headers.get("accept-language") || "en";
