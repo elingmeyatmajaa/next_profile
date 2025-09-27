@@ -4,9 +4,26 @@ import { prisma } from "../../../lib/prisma";
 import { t } from "../../../lib/i18n";
 import { slugify } from "@/lib/slugify";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const search = searchParams.get("search") || "";
+
+    const where = search
+      ? {
+          OR: [
+            { name: { contains: search } },
+            { slug: { contains: search } }, // kalau role ada slug
+          ],
+        }
+      : {};
+
+    const total = await prisma.role.count({ where });
+
     const roles = await prisma.role.findMany({
+      where,
       include: {
         permissions: {
           include: {
@@ -14,11 +31,40 @@ export async function GET() {
           },
         },
       },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" }, // pastikan role ada createdAt
     });
-    return NextResponse.json({ status: "success", code: 200, data: roles });
+
+    return NextResponse.json(
+      {
+        status: "success",
+        code: 200,
+        message: "OK",
+        data: roles,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+          nextPage: page < Math.ceil(total / limit) ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null,
+        },
+      },
+      { status: 200 }
+    );
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ status: "error", code: 500, message: "Server error" });
+    console.error("Error fetching roles:", err);
+    return NextResponse.json(
+      {
+        status: "error",
+        code: 500,
+        message: "Server error",
+      },
+      { status: 500 }
+    );
   }
 }
 
