@@ -1,62 +1,100 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { fetchUsers, User } from "@/lib/resources"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import toast from "react-hot-toast"
 
-export default function UsersPage() {
+export default function UsersTable() {
+  const [users, setUsers] = useState<User[]>([])
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(false)
+
+  const accessToken =
+    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
+
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const res = await fetchUsers({ page, limit, token: accessToken })
+      setUsers(res.data)
+      setTotalPages(res.pagination.totalPages)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [page])
+
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>👥 Manajemen User</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">
-            Tambah, edit, dan kelola pengguna aplikasi.
-          </p>
-          <Button>Tambah User</Button>
-        </CardContent>
-      </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>Users</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Created At</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center py-4">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center py-4">
+                  No data
+                </TableCell>
+              </TableRow>
+            ) : (
+              users.map((u) => (
+                <TableRow key={u.id}>
+                  <TableCell>{u.name}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>
+                    {new Date(u.createdAt).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Daftar User</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-4 py-2 text-left">Nama</th>
-                  <th className="px-4 py-2 text-left">Email</th>
-                  <th className="px-4 py-2 text-left">Role</th>
-                  <th className="px-4 py-2 text-left">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t">
-                  <td className="px-4 py-2">John Doe</td>
-                  <td className="px-4 py-2">john@example.com</td>
-                  <td className="px-4 py-2">Admin</td>
-                  <td className="px-4 py-2">
-                    <Button variant="outline" size="sm">
-                      Edit
-                    </Button>
-                  </td>
-                </tr>
-                <tr className="border-t">
-                  <td className="px-4 py-2">Jane Smith</td>
-                  <td className="px-4 py-2">jane@example.com</td>
-                  <td className="px-4 py-2">User</td>
-                  <td className="px-4 py-2">
-                    <Button variant="outline" size="sm">
-                      Edit
-                    </Button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <div className="flex gap-2 justify-end mt-4">
+          <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            Prev
+          </Button>
+          <span className="px-2 py-1">{page}</span>
+          <Button
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
