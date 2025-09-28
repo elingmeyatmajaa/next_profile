@@ -16,7 +16,8 @@
     "next": "15.5.3",
     "prisma": "^6.16.1",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-build-classic": "^43.3.1",
