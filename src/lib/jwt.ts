@@ -1,8 +1,9 @@
-// lib/jwt.ts
-import jwt from "jsonwebtoken";
+import jwt, { Secret, SignOptions } from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "supersecretjwtkey";
-const EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const SECRET: Secret = process.env.JWT_SECRET || "supersecretjwtkey";
+
+const EXPIRES_IN: SignOptions["expiresIn"] =
+  (process.env.JWT_EXPIRES_IN as SignOptions["expiresIn"]) || "7d";
 
 export function signJwt(payload: object) {
   return jwt.sign(payload, SECRET, { expiresIn: EXPIRES_IN });
@@ -11,7 +12,7 @@ export function signJwt(payload: object) {
 export function verifyJwt(token: string) {
   try {
     return jwt.verify(token, SECRET);
-  } catch (err) {
+  } catch {
     return null;
   }
 }

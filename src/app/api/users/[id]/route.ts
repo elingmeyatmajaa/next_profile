@@ -1,17 +1,18 @@
-// app/api/users/[id]/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { t } from "../../../../lib/i18n";
 import bcrypt from "bcryptjs";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const lang = req.headers.get("accept-language");
+
   try {
     const user = await prisma.user.findUnique({
-      where: { id: params.id }, // langsung string (UUID / CHAR(36))
+      where: { id },
       include: {
         roles: { include: { role: true } },
       },
@@ -24,10 +25,9 @@ export async function GET(
       );
     }
 
-    // hapus password dari response
     const { password, ...safeUser } = user as any;
 
-     return NextResponse.json(
+    return NextResponse.json(
       { status: "success", code: 200, message: "OK", data: safeUser },
       { status: 200 }
     );
@@ -42,16 +42,17 @@ export async function GET(
 
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const lang = req.headers.get("accept-language");
+
   try {
     const body = await req.json();
     const { name, email, password, roleIds } = body;
 
-    // cari user dulu
-    const existing = await prisma.user.findUnique({ where: { id: params.id } });
+    const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json(
         { message: t("NOT_FOUND", lang) },
@@ -64,9 +65,9 @@ export async function PUT(
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      const updatedUser = await tx.user.update({
-        where: { id: params.id },
+    const result = await prisma.$transaction(async (tx: any) => {
+      await tx.user.update({
+        where: { id },
         data: {
           name: name ?? existing.name,
           email: email ?? existing.email,
@@ -75,25 +76,26 @@ export async function PUT(
       });
 
       if (Array.isArray(roleIds)) {
-        // hapus role lama dulu
-        await tx.userRole.deleteMany({ where: { user_id: params.id } });
+        await tx.userRole.deleteMany({ where: { user_id: id } });
 
-        // tambahkan role baru
         const pivotData = roleIds.map((rid: string) => ({
-          user_id: params.id,
+          user_id: id,
           role_id: rid,
         }));
-        await tx.userRole.createMany({ data: pivotData, skipDuplicates: true });
+
+        await tx.userRole.createMany({
+          data: pivotData,
+          skipDuplicates: true,
+        });
       }
 
       return tx.user.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: { roles: { include: { role: true } } },
       });
     });
 
     if (result) {
-      // hapus password sebelum return
       // @ts-ignore
       delete result.password;
     }
@@ -111,13 +113,17 @@ export async function PUT(
   }
 }
 
+
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const lang = req.headers.get("accept-language");
+
   try {
-    const existing = await prisma.user.findUnique({ where: { id: params.id } });
+    const existing = await prisma.user.findUnique({ where: { id } });
+
     if (!existing) {
       return NextResponse.json(
         { message: t("NOT_FOUND", lang) },
@@ -125,10 +131,9 @@ export async function DELETE(
       );
     }
 
-    // delete user + relasi role
-    await prisma.$transaction(async (tx) => {
-      await tx.userRole.deleteMany({ where: { user_id: params.id } });
-      await tx.user.delete({ where: { id: params.id } });
+    await prisma.$transaction(async (tx: any) => {
+      await tx.userRole.deleteMany({ where: { user_id: id } });
+      await tx.user.delete({ where: { id } });
     });
 
     return NextResponse.json(

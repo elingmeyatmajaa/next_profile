@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
 import { t } from "@/lib/i18n";
 import { slugify } from "@/lib/slugify";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
   const lang = req.headers.get("accept-language") || "en";
   const authHeader = req.headers.get("authorization");
 
@@ -18,6 +23,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   try {
     const token = authHeader.split(" ")[1];
     const decoded = verifyJwt(token);
+
     if (!decoded) {
       return NextResponse.json(
         { status: "error", code: 401, message: t("INVALID_CREDENTIALS", lang) },
@@ -26,7 +32,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 
     const moduleData = await prisma.module.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         ModuleAction: {
           include: { action: true },
@@ -55,17 +61,19 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const lang = req.headers.get("accept-language") || "en";
-  const moduleId = params.id;
+  const moduleId = id;
 
   try {
     const formData = await req.formData();
     const name = formData.get("name")?.toString() || null;
     let slug = formData.get("slug")?.toString() || null;
-    const actionsRaw = formData.get("actions")?.toString() || ""; // "create,read,update"
+    const actionsRaw = formData.get("actions")?.toString() || "";
 
     if (!name) {
       return NextResponse.json(
@@ -74,15 +82,16 @@ export async function PUT(
       );
     }
 
-    // Generate slug otomatis dari name jika tidak ada
     if (!slug) slug = slugify(name);
 
     const actions = actionsRaw
       ? actionsRaw.split(",").map((a) => a.trim())
       : [];
 
-    // cek module exist
-    const existingModule = await prisma.module.findUnique({ where: { id: moduleId } });
+    const existingModule = await prisma.module.findUnique({
+      where: { id: moduleId },
+    });
+
     if (!existingModule) {
       return NextResponse.json(
         { status: "error", code: 404, message: t("NOT_FOUND", lang) },
@@ -90,23 +99,21 @@ export async function PUT(
       );
     }
 
-    // update nama dan slug
     const updatedModule = await prisma.module.update({
       where: { id: moduleId },
       data: { name, slug },
     });
 
-    // update actions (ModuleAction pivot)
     if (actions.length > 0) {
-      // hapus relasi lama
-      await prisma.moduleAction.deleteMany({ where: { module_id: moduleId } });
+      await prisma.moduleAction.deleteMany({
+        where: { module_id: moduleId },
+      });
 
-      // ambil action ids dari slug
       const actionRecords = await prisma.action.findMany({
         where: { slug: { in: actions } },
       });
 
-      const moduleActionData = actionRecords.map(act => ({
+      const moduleActionData = actionRecords.map((act:any) => ({
         module_id: moduleId,
         action_id: act.id,
       }));
@@ -117,14 +124,21 @@ export async function PUT(
       });
     }
 
-    // return module beserta relasi
     const moduleWithRelations = await prisma.module.findUnique({
       where: { id: moduleId },
-      include: { ModuleAction: { include: { action: true } }, permissions: true },
+      include: {
+        ModuleAction: { include: { action: true } },
+        permissions: true,
+      },
     });
 
     return NextResponse.json(
-      { status: "success", code: 200, message: t("UPDATED", lang), data: moduleWithRelations },
+      {
+        status: "success",
+        code: 200,
+        message: t("UPDATED", lang),
+        data: moduleWithRelations,
+      },
       { status: 200 }
     );
   } catch (err) {
@@ -136,29 +150,31 @@ export async function PUT(
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
   const lang = req.headers.get("accept-language") || "en";
 
-  try {
-    const moduleData = await prisma.module.findUnique({ where: { id: params.id } });
-    if (!moduleData) {
-      return NextResponse.json(
-        { status: "error", code: 404, message: t("NOT_FOUND", lang) },
-        { status: 404 }
-      );
-    }
+  const moduleData = await prisma.module.findUnique({
+    where: { id },
+  });
 
-    await prisma.module.delete({ where: { id: params.id } });
-
+  if (!moduleData) {
     return NextResponse.json(
-      { status: "success", code: 200, message: t("DELETED", lang) },
-      { status: 200 }
-    );
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { status: "error", code: 500, message: t("SERVER_ERROR", lang) },
-      { status: 500 }
+      { status: "error", code: 404, message: t("NOT_FOUND", lang) },
+      { status: 404 }
     );
   }
+
+  await prisma.module.delete({
+    where: { id },
+  });
+
+  return NextResponse.json(
+    { status: "success", code: 200, message: t("DELETED", lang) },
+    { status: 200 }
+  );
 }

@@ -1,9 +1,3 @@
-// app/api/auth/register/route.ts
-// import { prisma } from "../../../../lib/prisma";
-// import bcrypt from "bcryptjs";
-// import { signJwt } from "../../../../lib/jwt";
-// import { t } from "../../../../lib/i18n";
-// import { apiResponse } from "../../../../lib/apiResponse";
 import { apiResponse } from "@/lib/apiResponse";
 import { t } from "@/lib/i18n";
 import { signJwt } from "@/lib/jwt";
@@ -17,7 +11,6 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    // validasi input
     const errors = validateFormData(formData, ["name", "email", "password"]);
     if (errors) {
       return apiResponse({
@@ -33,10 +26,11 @@ export async function POST(req: Request) {
     const password = formData.get("password") as string;
     const roleIdsRaw = formData.get("roleIds") as string | null;
 
-    let roleIds: number[] = [];
+    let roleIds: string[] = [];
+
     if (roleIdsRaw) {
       try {
-        roleIds = JSON.parse(roleIdsRaw);
+        roleIds = JSON.parse(roleIdsRaw) as string[];
       } catch {
         roleIds = [];
       }
@@ -55,36 +49,50 @@ export async function POST(req: Request) {
     // hash password
     const hashed = await bcrypt.hash(password, 10);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
+
       const user = await tx.user.create({
-        data: { name, email, password: hashed },
+        data: {
+          name,
+          email,
+          password: hashed,
+        },
       });
 
+      // insert role pivot
       if (roleIds.length > 0) {
-        const pivots = roleIds.map((rid: number) => ({
+        const pivots = roleIds.map((rid: string) => ({
           user_id: user.id,
           role_id: rid,
         }));
-        await tx.userRole.createMany({ data: pivots, skipDuplicates: true });
+
+        await tx.userRole.createMany({
+          data: pivots,
+          skipDuplicates: true,
+        });
       }
 
       const userWithRoles = await tx.user.findUnique({
         where: { id: user.id },
-        include: { roles: { include: { role: true } } },
+        include: {
+          roles: {
+            include: { role: true },
+          },
+        },
       });
 
-      // hapus password sebelum return
-      // @ts-ignore
-      delete userWithRoles?.password;
+      if (userWithRoles) {
+        // @ts-ignore
+        delete userWithRoles.password;
+      }
 
       return userWithRoles;
     });
 
-    // buat JWT (auto login setelah register)
     const token = signJwt({
       sub: result?.id,
       email: result?.email,
-      roles: result?.roles.map((r) => r.role.slug),
+      roles: result?.roles.map((r: any) => r.role.slug),
     });
 
     return apiResponse({
@@ -94,8 +102,10 @@ export async function POST(req: Request) {
       data: result,
       token,
     });
+
   } catch (err) {
     console.error(err);
+
     return apiResponse({
       status: "error",
       code: 500,

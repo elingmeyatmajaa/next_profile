@@ -7,16 +7,15 @@ const messages = {
     SERVER_ERROR: "Internal server error",
     LOGIN_SUCCESS: "Login successful",
     INVALID_CREDENTIALS: "Invalid credentials",
-     EMAIL_EXISTS: "Email already registered",   // ✅ tambahkan
-    NAME_REQUIRED: "Name is required",          // ✅
-    EMAIL_REQUIRED: "Email is required",        // ✅
+    EMAIL_EXISTS: "Email already registered",
+    NAME_REQUIRED: "Name is required",
+    EMAIL_REQUIRED: "Email is required",
     PASSWORD_REQUIRED: "Password is required",
-    SUCCESS: "Success" , // ✅
-    NOT_FOUND: "Not Found", // ✅
+    SUCCESS: "Success",
+    NOT_FOUND: "Not Found",
     DELETED: "Deleted successfully",
     UPDATED: "Updated successfully",
-    LOGOUT_SUCCESS: "Logout successful" // ✅
-
+    LOGOUT_SUCCESS: "Logout successful",
   },
   id: {
     CREATED: "Berhasil dibuat",
@@ -24,10 +23,16 @@ const messages = {
     SERVER_ERROR: "Terjadi kesalahan server",
     LOGIN_SUCCESS: "Login berhasil",
     INVALID_CREDENTIALS: "Kredensial salah",
-     EMAIL_EXISTS: "Email sudah terdaftar",      // ✅ tambahkan
-    NAME_REQUIRED: "Nama wajib diisi",          // ✅
-    EMAIL_REQUIRED: "Email wajib diisi",        // ✅
-    PASSWORD_REQUIRED: "Password wajib diisi",  // ✅
+    EMAIL_EXISTS: "Email sudah terdaftar",
+    NAME_REQUIRED: "Nama wajib diisi",
+    EMAIL_REQUIRED: "Email wajib diisi",
+    PASSWORD_REQUIRED: "Password wajib diisi",
+
+    SUCCESS: "Berhasil",
+    NOT_FOUND: "Data tidak ditemukan",
+    DELETED: "Berhasil dihapus",
+    UPDATED: "Berhasil diperbarui",
+    LOGOUT_SUCCESS: "Logout berhasil",
   },
 } as const;
 

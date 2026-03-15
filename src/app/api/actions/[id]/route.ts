@@ -1,11 +1,15 @@
 // app/api/actions/[id]/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
 import { t } from "@/lib/i18n";
 import { slugify } from "@/lib/slugify";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   const lang = req.headers.get("accept-language") || "en";
   const authHeader = req.headers.get("authorization");
 
@@ -27,9 +31,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       );
     }
 
-    // ID sekarang UUID string, tidak perlu Number()
     const action = await prisma.action.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!action) {
@@ -53,84 +56,68 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const lang = req.headers.get("accept-language") || "en";
 
-  try {
-    // Langsung gunakan string UUID
-    const action = await prisma.action.findUnique({ where: { id: params.id } });
-    if (!action) {
-      return NextResponse.json(
-        { status: "error", code: 404, message: t("NOT_FOUND", lang) },
-        { status: 404 }
-      );
-    }
+  const action = await prisma.action.findUnique({ where: { id } });
 
-    await prisma.action.delete({ where: { id: params.id } });
-
+  if (!action) {
     return NextResponse.json(
-      { status: "success", code: 200, message: t("DELETED", lang) },
-      { status: 200 }
-    );
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { status: "error", code: 500, message: t("SERVER_ERROR", lang) },
-      { status: 500 }
+      { status: "error", code: 404, message: t("NOT_FOUND", lang) },
+      { status: 404 }
     );
   }
+
+  await prisma.action.delete({ where: { id } });
+
+  return NextResponse.json(
+    { status: "success", code: 200, message: t("DELETED", lang) },
+    { status: 200 }
+  );
 }
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const lang = req.headers.get("accept-language") || "en";
 
-  try {
-    const formData = await req.formData();
-    const name = formData.get("name")?.toString() || null;
-    let slug = formData.get("slug")?.toString() || null;
+  const formData = await req.formData();
+  const name = formData.get("name")?.toString() || null;
+  let slug = formData.get("slug")?.toString() || null;
 
-    if (!name) {
-      return NextResponse.json(
-        { status: "error", code: 400, message: t("BAD_REQUEST", lang) },
-        { status: 400 }
-      );
-    }
-
-    // Generate slug otomatis dari name jika tidak ada
-    if (!slug) slug = slugify(name);
-
-    const existingAction = await prisma.action.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!existingAction) {
-      return NextResponse.json(
-        { status: "error", code: 404, message: t("NOT_FOUND", lang) },
-        { status: 404 }
-      );
-    }
-
-    const updatedAction = await prisma.action.update({
-      where: { id: params.id },
-      data: { name, slug },
-    });
-
+  if (!name) {
     return NextResponse.json(
-      { status: "success", code: 200, message: t("UPDATED", lang), data: updatedAction },
-      { status: 200 }
-    );
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { status: "error", code: 500, message: t("SERVER_ERROR", lang) },
-      { status: 500 }
+      { status: "error", code: 400, message: t("BAD_REQUEST", lang) },
+      { status: 400 }
     );
   }
-}
 
+  if (!slug) slug = slugify(name);
+
+  const existingAction = await prisma.action.findUnique({
+    where: { id },
+  });
+
+  if (!existingAction) {
+    return NextResponse.json(
+      { status: "error", code: 404, message: t("NOT_FOUND", lang) },
+      { status: 404 }
+    );
+  }
+
+  const updatedAction = await prisma.action.update({
+    where: { id },
+    data: { name, slug },
+  });
+
+  return NextResponse.json(
+    { status: "success", code: 200, message: t("UPDATED", lang), data: updatedAction },
+    { status: 200 }
+  );
+}
 

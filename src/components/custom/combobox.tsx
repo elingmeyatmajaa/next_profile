@@ -19,10 +19,10 @@ import {
 import { useEffect, useState } from "react";
 import { CommandList, CommandSeparator } from "cmdk";
 import TextForm from "./text_form";
-import HttpClient from "@/lib/http_client";
 import { Search } from "lucide-react";
 import { Label } from "@radix-ui/react-label";
 import __ from "@/lib/lang";
+import HttpClient from "@/lib/http_client";
 
 type Result = {
   value: string;

@@ -23,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import HttpClient from "@/lib/http_client";
 import { debounce, xor } from "lodash";
 
 import DropdownComponent from "./dropdown-component";
@@ -45,6 +44,7 @@ import {
 } from "lucide-react";
 import { IconCaretDownFilled, IconCaretRightFilled } from "@tabler/icons-react";
 import { se } from "date-fns/locale";
+import HttpClient from "@/lib/http_client";
 
 type DatatableColumn = {
   name: string;

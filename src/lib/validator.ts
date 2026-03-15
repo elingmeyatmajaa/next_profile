@@ -1,4 +1,3 @@
-// lib/validator.ts
 import { t } from "./i18n";
 
 export type ValidationError = Record<string, string | undefined>;
@@ -12,7 +11,7 @@ export function validateRequired(
 
   fields.forEach((field) => {
     if (!body[field]) {
-      errors[field] = t(`${field.toUpperCase()}_REQUIRED`, lang);
+      errors[field] = t(`${field.toUpperCase()}_REQUIRED` as any, lang);
     }
   });
 
